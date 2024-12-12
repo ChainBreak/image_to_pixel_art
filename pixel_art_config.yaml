@@ -1,0 +1,3 @@
+model: 1
+max_epochs: 100
+device: mps

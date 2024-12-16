@@ -33,13 +33,7 @@ class Encoder(nn.Module):
         )
         yield nn.BatchNorm2d(last_channels)
         yield nn.LeakyReLU(True)
-        yield nn.Conv2d(
-            in_channels=last_channels,
-            out_channels=3,
-            kernel_size=1,
-            stride=1,
-            padding=0,
-        )
+
     
     def forward(self, x):
         return self.model(x)

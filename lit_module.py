@@ -1,11 +1,12 @@
+import numpy as np
 import torch
-from torch import nn
 import lightning as L
 import torchvision
 import torch.nn.functional as F
 from pathlib import Path
 from models.encoder import Encoder
 from models.decoder import Decoder
+from models.quantizer import Quantizer
 import time
 
 class LitModule(L.LightningModule):
@@ -14,9 +15,11 @@ class LitModule(L.LightningModule):
         super(LitModule, self).__init__()
 
         self.save_hyperparameters()
+        p = self.hparams
 
-        self.encoder_model = Encoder(  down_blocks_channels = [16, 32, 64]  )
-        self.decoder_model = Decoder(  down_blocks_channels = [16, 32, 64]  )
+        self.encoder_model = Encoder(  down_blocks_channels = [16, 32, 64, 128]  )
+        self.decoder_model = Decoder(  down_blocks_channels = [16, 32, 64, 128]  )
+        self.quantizer = Quantizer(  channels=128, color_pallete=p.color_pallete  )
  
         self.example_input_array = torch.randn(1, 3, 128, 128)
 
@@ -24,19 +27,35 @@ class LitModule(L.LightningModule):
 
     def forward(self, x):
         x = self.encoder_model(x)
+        x = self.quantizer(x)
         x = self.decoder_model(x)
+
         return x
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
+        input_image, y = batch
 
-        pixel_art = self.encoder_model(x)
+        x = self.encoder_model(input_image)
+
+        pixel_art = self.quantizer(x)
+
         x_hat = self.decoder_model(pixel_art)
 
-        loss = F.mse_loss(x_hat, x)
+        x_low_res = F.interpolate(input_image, size=pixel_art.shape[2:], mode='bilinear', align_corners=False)
+
+        loss_reconstruction = F.mse_loss(x_hat, input_image)
+        loss_low_res = F.mse_loss(pixel_art, x_low_res)
+
+        low_res_weighting = np.interp(self.global_step, [0, 3000], [1.0, 0.0])
+
+        loss = loss_reconstruction + loss_low_res * low_res_weighting
+
+        self.log('train_loss_reconstruction', loss_reconstruction)
+        self.log('train_loss_low_res', loss_low_res)
         self.log('train_loss', loss)
+        self.log('low_res_weighting', low_res_weighting)
         self.log_batch_as_image_grid(pixel_art, 'train_pixel_art')
-        self.log_batch_as_image_grid(x, 'input_image')
+        self.log_batch_as_image_grid(input_image, 'input_image')
         self.log_batch_as_image_grid(x_hat, 'output_image')
         return loss
     

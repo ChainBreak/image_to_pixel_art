@@ -3,3 +3,37 @@ max_epochs: 100
 device: mps
 batch_size: 32
 image_log_interval_seconds: 10
+
+color_pallete:
+- FF0a0a0b
+- FF292640
+- FF4b4e5e
+- FF818686
+- FFb6bcbb
+- FFdcdcd5
+- FFfffff2
+- FFb9faff
+- FF95daf4
+- FF6eb1d9
+- FF517fac
+- FF42577b
+- FF518199
+- FF57a9a6
+- FF60c799
+- FF81d799
+- FFd8ffb4
+- FFf4e5c3
+- FFe7cfb6
+- FFd7af9a
+- FFbc897f
+- FFa66067
+- FF61375a
+- FF7e5999
+- FFc185cf
+- FFe49fdb
+- FFf7e0ec
+- FFe1c9b9
+- FFd7928c
+- FFc75876
+- FF944c90
+- FF603b66

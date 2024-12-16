@@ -1,3 +1,5 @@
 model: 1
 max_epochs: 100
 device: mps
+batch_size: 32
+image_log_interval_seconds: 10

@@ -2,6 +2,9 @@ import click
 import yaml
 import lightning as L
 from lit_module import LitModule
+from lightning.pytorch.loggers import TensorBoardLogger
+
+
 
 
 @click.group()
@@ -39,11 +42,16 @@ def start_training(lit_module,resume_from_checkpoint=None):
 
     print_hparams(p)
     
+
+    logger = TensorBoardLogger("lightning_logs", name="my_model")
+    
+
     trainer = L.Trainer(
         accelerator=p.device, 
-        devices=1,
-        log_every_n_steps=1,
         max_epochs=p.max_epochs,
+        devices=1,
+        logger=logger,
+        log_every_n_steps=100,
         )
 
     trainer.fit(

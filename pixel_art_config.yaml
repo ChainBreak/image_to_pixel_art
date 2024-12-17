@@ -1,7 +1,7 @@
 model: 1
 max_epochs: 100
 device: mps
-batch_size: 32
+batch_size: 24
 image_log_interval_seconds: 10
 
 color_pallete:

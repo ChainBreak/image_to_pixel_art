@@ -46,7 +46,7 @@ class LitModule(L.LightningModule):
         loss_reconstruction = F.mse_loss(x_hat, input_image)
         loss_low_res = F.mse_loss(pixel_art, x_low_res)
 
-        low_res_weighting = np.interp(self.global_step, [0, 3000], [1.0, 0.0])
+        low_res_weighting = 1.0 #np.interp(self.global_step, [0, 3000], [1.0, 0.0])
 
         loss = loss_reconstruction + loss_low_res * low_res_weighting
 
@@ -90,7 +90,8 @@ class LitModule(L.LightningModule):
         return transform(pil_image)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        p=self.hparams
+        optimizer = torch.optim.Adam(self.parameters(), lr=p.learning_rate)
         return optimizer
     
     def log_batch_as_image_grid(self, batch, name):

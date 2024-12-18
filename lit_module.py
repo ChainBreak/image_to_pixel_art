@@ -17,11 +17,18 @@ class LitModule(L.LightningModule):
         self.save_hyperparameters()
         p = self.hparams
 
-        self.encoder_model = Encoder(  down_blocks_channels = [16, 32, 64, 128]  )
-        self.decoder_model = Decoder(  down_blocks_channels = [16, 32, 64, 128]  )
+        self.encoder_model = Encoder(
+            num_channels = [16, 32, 64, 128],
+            num_blocks = [2, 2, 3, 4],
+        )
+        self.decoder_model = Decoder(
+            num_channels = [16, 32, 64, 128],
+            num_blocks = [2, 2, 3, 4],
+        )
+
         self.quantizer = Quantizer(  channels=128, color_pallete=p.color_pallete  )
  
-        self.example_input_array = torch.randn(1, 3, 128, 128)
+        self.example_input_array = torch.randn(1, 3, 256, 256)
 
         self.last_image_log_time = 0
 
@@ -46,7 +53,7 @@ class LitModule(L.LightningModule):
         loss_reconstruction = F.mse_loss(x_hat, input_image)
         loss_low_res = F.mse_loss(pixel_art, x_low_res)
 
-        low_res_weighting = 1.0 #np.interp(self.global_step, [0, 3000], [1.0, 0.0])
+        low_res_weighting = 0.2 #np.interp(self.global_step, [0, 3000], [1.0, 0.0])
 
         loss = loss_reconstruction + loss_low_res * low_res_weighting
 

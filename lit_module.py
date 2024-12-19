@@ -26,15 +26,25 @@ class LitModule(L.LightningModule):
             num_blocks = [2, 2, 3, 4],
         )
 
-        self.quantizer = Quantizer(  channels=128, color_pallete=p.color_pallete  )
+        color_pallete = list(self.generate_color_pallete(8))
+        print(color_pallete)
+        self.quantizer = Quantizer(  channels=128, color_pallete=color_pallete  )
  
         self.example_input_array = torch.randn(1, 3, 256, 256)
 
         self.last_image_log_time = 0
+    
+    def generate_color_pallete(self, num_colors):
+        
+        for r in range(0, 256, 256//num_colors):
+            for g in range(0, 256, 256//num_colors):
+                for b in range(0, 256, 256//num_colors):
+                    yield f'FF{r:02x}{g:02x}{b:02x}'
+
 
     def forward(self, x):
         x = self.encoder_model(x)
-        x = self.quantizer(x)
+        x,_ = self.quantizer(x)
         x = self.decoder_model(x)
 
         return x
@@ -44,14 +54,14 @@ class LitModule(L.LightningModule):
 
         x = self.encoder_model(input_image)
 
-        pixel_art = self.quantizer(x)
+        discrete_image, blended_image = self.quantizer(x)
 
-        x_hat = self.decoder_model(pixel_art)
+        x_hat = self.decoder_model(discrete_image)
 
-        x_low_res = F.interpolate(input_image, size=pixel_art.shape[2:], mode='bilinear', align_corners=False)
+        x_low_res = F.interpolate(input_image, size=discrete_image.shape[2:], mode='bilinear', align_corners=False)
 
         loss_reconstruction = F.mse_loss(x_hat, input_image)
-        loss_low_res = F.mse_loss(pixel_art, x_low_res)
+        loss_low_res = F.mse_loss(discrete_image, x_low_res)
 
         low_res_weighting = 0.2 #np.interp(self.global_step, [0, 3000], [1.0, 0.0])
 
@@ -61,7 +71,8 @@ class LitModule(L.LightningModule):
         self.log('train_loss_low_res', loss_low_res)
         self.log('train_loss', loss)
         self.log('low_res_weighting', low_res_weighting)
-        self.log_batch_as_image_grid(pixel_art, 'train_pixel_art')
+        self.log_batch_as_image_grid(discrete_image, 'train_pixel_art')
+        self.log_batch_as_image_grid(blended_image, 'blended_image')
         self.log_batch_as_image_grid(input_image, 'input_image')
         self.log_batch_as_image_grid(x_hat, 'output_image')
         return loss

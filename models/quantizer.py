@@ -8,7 +8,7 @@ class Quantizer(nn.Module):
 
         self.num_colors = len(color_pallete)
         self.color_pallete_rgb = torch.tensor(self.hex_list_to_rgb_list(color_pallete), dtype=torch.float32) / 255
-        
+        print(self.color_pallete_rgb)
         self.color_pallete_rgb = nn.Parameter(self.color_pallete_rgb, requires_grad=False)
 
         self.channels_to_color_prob_conv = nn.Conv2d(
@@ -31,7 +31,7 @@ class Quantizer(nn.Module):
  
         pixel_art = (discrete_color - blended_color).detach() + blended_color
 
-        return pixel_art
+        return pixel_art, blended_color
     
     def get_weighted_sum_of_colors(self, color_prob, color_pallete_rgb):
         b,c,h,w = color_prob.shape
@@ -49,7 +49,8 @@ class Quantizer(nn.Module):
 
         color_prob = color_prob.permute(0,2,3,1).reshape(-1, c)
 
-        color_index = torch.multinomial(color_prob, 1).reshape(-1)
+        color_index = torch.argmax(color_prob, 1).reshape(-1)
+        # color_index = torch.multinomial(color_prob, 1).reshape(-1)
 
         discrete_color = color_pallete_rgb[color_index]
 
